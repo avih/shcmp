@@ -1,0 +1,136 @@
+#!/bin/sh
+
+#  Copyright (c) 2018, Avi Halachmi (:avih) https://github.com/avih/shcmp
+#
+#  Permission to use, copy, modify, and/or distribute this software for any
+#  purpose with or without fee is hereby granted, provided that the above
+#  copyright notice and this permission notice appear in all copies.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+#  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+#  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+#  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+#  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+#  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
+if false; then
+    # (old) hush: can't parse "subshell function" e.g. -c 'f() (true)'
+
+    # (old) hush: aborts prematurely on -c 'set -e; false || x=1; echo OK'
+    # bosh: aborts prematurely on -c 'set -e; f() { false; }; while f; do :; done; echo OK'
+    set -e
+
+    # posh: aborts prematurely on -c 'set -u; echo "$@"; echo OK'
+    set -u 2>/dev/null || :
+
+    #set -x
+fi
+
+
+# Quote the args for shell re-input. E.g. a=$(SHQ "$@"); eval printf =%s= "$a"
+SHQ() {
+    out=
+    for v; do
+        out=$out\'
+        while case $v in *\'*) :;; *) false;; esac; do
+            out=$out${v%%\'*}"'\''"
+            v=${v#*\'}
+        done
+        out=$out$v"' "
+    done
+    printf %s "${out%?}"
+}
+
+# $1: ok prefix, $2: err prefix, $3: done, $4: cmds, $5: extra [,$6..: args]
+# Run each of $4 (space-separated) with the args (quoted) and extra (unquoted),
+# and cluster them by (std) output, including the ok/err prefix.
+# Once done, runs $3 with pairs of args: [<cmds1> <out1> [<cmds2> <out2> [..]]]
+# Note: $3 and $4 can be functions, commands, etc - but shouldn't be all CAPS.
+cluster_outputs() {(
+    OK=$1 ERR=$2 DONE=$3 CMDS=$4 EXTRA=$5; shift 5
+    ARGS=$(SHQ "$@"); set --
+
+    for C in $CMDS; do
+        OUT=$( (eval "$C $ARGS $EXTRA") && echo 0 || echo 1)  # trailing \n's
+        case $OUT in *0) OUT=$OK${OUT%?};; *) OUT=$ERR${OUT%?};; esac
+
+        # add "$C" to an existing pair (in "$@") or add a new pair "$C" "$OUT"
+        I=1; PA=; FOUND=
+        while [ $I -lt $# ]; do
+            J=$((I+1)); eval JV=\${$J}
+            [ "$JV" = "$OUT" ] && PA=$PA' "${'$I'} $C" "${'$J'}"' && FOUND=1 ||
+                                  PA=$PA' "${'$I'}"    "${'$J'}"'
+            I=$((I+2))
+        done
+        [ "$FOUND" ] && eval set -- $PA || set -- "$@" "$C" "$OUT"
+    done
+
+    $DONE "$@"
+)}
+
+
+# output format utils
+
+list_items() {
+    printf %s "$*" | sed 's/ /, /g'
+}
+
+# args: 1/0 to trim/not-trim output, then arg pairs of: cmd-list common-output
+fmt_out() {(
+    trim=$1; shift
+    while [ $# -gt 0 ]; do
+        [ "$trim" = 0 ] && out=$2 || out=$(printf %s "$2")
+        printf "= %s:\n%s\n" "$(list_items $1)" "$out"
+        shift 2
+        [ $# = 0 ] || echo
+    done
+)}
+
+
+# main
+
+# setup the tested shells
+RC=~/.shcmprc  # no tilde expansion in hush at this time, so try also $HOME
+[ -e "$RC" ] || RC="$HOME"/.shcmprc
+
+[ -e "$RC" ] && . "$RC" ||
+{
+    # built in sample shells - if ~/.shcmprc doesn't exist or has non-0 exit
+    busybox_ash()  { busybox ash "$@"; }
+    busybox_hush() { busybox hush "$@"; }
+    bash_posix()   { bash --posix "$@"; }
+    mksh_posix()   { mksh -o posix "$@"; }
+    yash_posix()   { yash -o posixlycorrect "$@"; }
+    foo_shell()    { /path/to/whatever "$@"; }
+
+    shells="sh bash bash_posix busybox_ash busybox_hush dash mksh mksh_posix posh yash yash_posix"
+
+    working_shells=  # keep only the shells that exist/work on this system
+    for s in $shells; do
+        if $s -c ":" 2>/dev/null; then
+            working_shells="$working_shells $s"
+        fi
+    done
+    shells=$working_shells
+}
+
+REDIRECT='2>&1' TRIM=1
+while true; do
+    case ${1-} in
+        --NOERR)  REDIRECT=; shift
+                  ;;
+        --NOTRIM) TRIM=0; shift
+                  ;;
+        --help)   printf %s\\n "Usage: shcmp [--NOERR] [--NOTRIM] <arguments>"
+                  printf %s\\n "Run different shells with <arguments> and cluster them by output."
+                  printf %s\\n "--NOERR: capture and cluster by stdout only, else stdout+stderr."
+                  printf %s\\n "--NOTRIM: don't trim trailing newlines from the outputs."
+                  exit 0
+                  ;;
+        *)        break
+    esac
+done
+
+cluster_outputs '' "<error> " "fmt_out $TRIM" "$shells" "$REDIRECT" "$@"
