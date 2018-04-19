@@ -56,5 +56,12 @@ myshell_posix() { /path/to/myshell -o posix "$@"; }
 shells="bash sh myshell myshell_posix"
 ```
 
-If sourcing `~/.shcmprc` results in a non-0 status, then the built-in list is
-used instead.
+You could also use `~/.shcmprc` to support setting the list via an environment
+variable, e.g. replacing the last line at the file above with:
+```
+[ "${shells-}" ] || shells="bash sh myshell myshell_posix"
+```
+Will allow running this: `shells="sh myshell_posix" shcmp ./myscript` .
+
+Additionally, if sourcing `~/.shcmprc` results in a non-0 status (e.g. if its
+last command is `false`), then the built-in list is used instead.
