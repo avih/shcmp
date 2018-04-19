@@ -34,8 +34,11 @@ yash: no such command `local'
 Note that the captured output also includes stderr (the error message for
 `yash`). Use `--NOERR` to prevent that and capture only stdout.
 
+`shcmp` can also be used to compare the output of a script. E.g. use
+`shcmp ./myscript foo bar` to run `./myscript` with two arguments in all shells
+and compare their outputs.
 
-## `~/.shcmprc`
+### `~/.shcmprc`
 
 `shcmp` includes a built-in sample list of common shells and some posix
 variants (function wrappers with additional arguments).
