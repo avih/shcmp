@@ -35,6 +35,8 @@ Note that the captured output also includes stderr (the error message for
 `yash`). Use `--NOERR` to prevent that and capture only stdout.
 
 
+## `~/.shcmprc`
+
 `shcmp` includes a built-in sample list of common shells and some posix
 variants (function wrappers with additional arguments).
 
