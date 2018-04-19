@@ -127,11 +127,13 @@ while true; do
                   ;;
         --NOTRIM) TRIM=0; shift
                   ;;
-        --help)   printf %s\\n "Usage: shcmp [--NOERR] [--NOTRIM] <arguments>"
+        --help|-h) printf %s\\n "Usage: shcmp [-h|--help] [--NOERR] [--NOTRIM] [--] <arguments>"
                   printf %s\\n "Run different shells with <arguments> and cluster them by output."
                   printf %s\\n "--NOERR: capture and cluster by stdout only, else (default) stdout+stderr."
                   printf %s\\n "--NOTRIM: don't trim trailing newlines from the outputs."
                   exit 0
+                  ;;
+        --)       shift; break;
                   ;;
         *)        break
     esac
