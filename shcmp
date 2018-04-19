@@ -120,7 +120,7 @@ RC=~/.shcmprc  # no tilde expansion in hush at this time, so try also $HOME
     shells=$working_shells
 }
 
-REDIRECT='2>&1' TRIM=1
+REDIRECT='2>&1' TRIM=1 ALLOW_EMPTY=
 while true; do
     case ${1-} in
         --NOERR)  REDIRECT=; shift
@@ -133,11 +133,14 @@ while true; do
                   printf %s\\n "--NOTRIM: don't trim trailing newlines from the outputs."
                   exit 0
                   ;;
-        --)       shift; break;
+        --)       ALLOW_EMPTY=1; shift; break;
                   ;;
         *)        break
     esac
 done
+
+[ $# -gt 0 ] || [ "$ALLOW_EMPTY" ] ||
+    { >&2 echo "Error: no arguments. Add -- to force. See usage with -h"; exit 1; }
 
 pairs=$(cluster_outputs '' "<error> " "$shells" "$REDIRECT" "$@")
 eval fmt_out $TRIM "$pairs"
