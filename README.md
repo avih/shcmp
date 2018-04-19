@@ -5,7 +5,7 @@ Compare outputs using different shells
 Usage: shcmp [-h|--help] [--NOERR] [--NOTRIM] [--] <arguments>
 Run different shells with <arguments> and cluster them by output.
 --NOERR: capture and cluster by stdout only, else (default) stdout+stderr.
---NOTRIM: don't trim trailing newlines from the outputs.
+--NOTRIM: don't trim trailing newlines from the outputs display.
 ```
 
 ## Example:
