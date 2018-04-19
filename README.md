@@ -39,4 +39,17 @@ Note that the captured output also includes stderr (the error message for
 variants (function wrappers with additional arguments).
 
 If the file `~/.shcmprc` exists, then it's sourced and replaces the list of
-built-in shells (and wrapper functions). See the source code for more info.
+built-in shells (and wrapper functions). It should set the variable `shells` to
+a space-separated list of shells to run. This list may also include function
+names - which this file should define too.
+
+E.g. `~/.shcmprc`:
+```shell
+myshell()       { /path/to/myshell "$@"; }
+myshell_posix() { /path/to/myshell -o posix "$@"; }
+
+shells="bash sh myshell myshell_posix"
+```
+
+If sourcing `~/.shcmprc` results in a non-0 status, then the built-in list is
+used instead.
