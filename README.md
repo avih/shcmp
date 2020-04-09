@@ -38,6 +38,40 @@ Note that the captured output also includes stderr (the error message for
 `shcmp ./myscript foo bar` to run `./myscript` with two arguments in all shells
 and compare their outputs.
 
+### `--TIME`
+
+Using this option will measure the execution time at each shell and display
+a sorted summary. For instance this command:
+
+```
+shcmp --TIME -c 'i=50000; while [ $i != 0 ]; do i=$((i-1)); done; echo OK'
+```
+
+may have an output similar to this:
+
+```
+-----
+1283 ms, 1 ms/measure, Linux/dash
+-----
+ 325 ms  25 %  bash
+ 205 ms  16 %  oksh
+ 186 ms  14 %  bb_ash
+ 182 ms  14 %  mksh
+ 156 ms  12 %  ksh93
+ 150 ms  12 %  pdksh
+  79 ms   6 %  dash
+-----
+= dash, bash, bb_ash, mksh, pdksh, ksh93, oksh:
+OK
+```
+
+In order for `--TIME` to work, you will need to place `time.sh` at your `$PATH`
+or specify it with `$SHCMP_TIME_FILE`. See https://github.com/avih/time.sh .
+
+Alternatively, you can measure and summarize yourself by defining the functions
+`shcmp_time_init`, `shcmp_time_switch_to <name>` and `shcmp_time_finish` at
+`~/.shcmprc` (see below). The functions are called from the same shell context.
+
 ### `~/.shcmprc`
 
 `shcmp` includes a built-in sample list of common shells and some posix

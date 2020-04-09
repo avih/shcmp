@@ -45,6 +45,11 @@ SHQ() {
     printf %s "${out%?}"
 }
 
+# ~/.shcmprc can override these functions, which are called at the same context
+shcmp_time_init() { . "${SHCMP_TIME_FILE-time.sh}"; TIME_PRINT=0; }
+shcmp_time_switch_to() { time_switch_to "$1"; }
+shcmp_time_finish() { time_finish; }
+
 # $1: out ok prefix, $2: out err prefix, $3: cmds, $4: trail [,$5..: args]
 # Run each of $3 (IFS-separated) with the args (quoted) and trail (unquoted),
 # and cluster them by (std) output, including the ok/err output prefix.
@@ -54,8 +59,11 @@ SHQ() {
 cluster_outputs() {
     OK=$1 ERR=$2 CMDS=$3 TRAIL=$4; shift 4
     ARGS=$(SHQ "$@"); set --
+    [ -z "$DOTIME" ] || shcmp_time_init $CMDS
 
     for C in $CMDS; do
+        [ -z "$DOTIME" ] || shcmp_time_switch_to "$C"
+
         OUT=$( (eval "$C $ARGS $TRAIL") && echo 0 || echo 1)  # trailing \n's
         case $OUT in *0) OUT=$OK${OUT%?};; *) OUT=$ERR${OUT%?};; esac
 
@@ -70,6 +78,7 @@ cluster_outputs() {
         [ "$FOUND" ] && eval set -- $PA || set -- "$@" "$C" "$OUT"
     done
 
+    [ -z "$DOTIME" ] || shcmp_time_finish
     SHQ "$@"
 }
 
@@ -120,7 +129,7 @@ RC=~/.shcmprc  # no tilde expansion in hush at this time, so try also $HOME
     shells=$working_shells
 }
 
-REDIRECT='2>&1' TRIM=1 ALLOW_EMPTY=
+REDIRECT='2>&1' TRIM=1 ALLOW_EMPTY= DOTIME=
 while true; do
     case ${1-} in
         --SHELL)  shift; ("$@"); exit
@@ -129,11 +138,16 @@ while true; do
                   ;;
         --NOTRIM) TRIM=0; shift
                   ;;
-        --help|-h) printf %s\\n "Usage: shcmp [-h|--help] [--NOERR] [--NOTRIM] [--] <arguments>"
+        --TIME)   DOTIME=1; shift
+                  ;;
+        --help|-h)
+                  printf %s\\n "Usage: shcmp [-h|--help] [--NOERR] [--NOTRIM] [--TIME] [--] <arguments>"
                   printf %s\\n "       shcmp --SHELL <shell> <arguments>"
                   printf %s\\n "Run different shells with <arguments> and cluster them by output."
                   printf %s\\n "--NOERR: capture and cluster by stdout only, else (default) stdout+stderr."
                   printf %s\\n "--NOTRIM: don't trim trailing newlines from the outputs display."
+                  printf %s\\n "--TIME:   measure durations. expects time.sh at \$PATH, or \$SHCMP_TIME_FILE"
+                  printf %s\\n "          See https://github.com/avih/time.sh ."
                   printf %s\\n "--SHELL: simply run a shell by its shcmp name [with the remaining arguments]."
                   exit 0
                   ;;
