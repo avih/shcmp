@@ -2,10 +2,17 @@
 Compare outputs using different shells
 
 ```
-Usage: shcmp [-h|--help] [--NOERR] [--NOTRIM] [--] <arguments>
-Run different shells with <arguments> and cluster them by output.
---NOERR: capture and cluster by stdout only, else (default) stdout+stderr.
---NOTRIM: don't trim trailing newlines from the outputs display.
+Usage: shcmp -h|--help | [--NOERR] [--NOTRIM] [--TIME] arg...
+       shcmp --SHELL shell [arg...]
+
+Run different shells with arg... and cluster them by output.
+Note: any unrecognized option, e.g. -c, is considered the begining of arg.
+
+--NOERR  Capture and cluster by stdout only, else (default) stdout+stderr.
+--NOTRIM Don't trim trailing newlines from the outputs display.
+--TIME   Measure durations - expects $SHCMP_TIME_FILE or time.sh at $PATH .
+         See https://github.com/avih/time.sh .
+--SHELL  Run shcmp-name `shell' [arg...] without processing or redirections.
 ```
 
 ## Example:

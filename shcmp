@@ -141,14 +141,19 @@ while true; do
         --TIME)   DOTIME=1; shift
                   ;;
         --help|-h)
-                  printf %s\\n "Usage: shcmp [-h|--help] [--NOERR] [--NOTRIM] [--TIME] [--] <arguments>"
-                  printf %s\\n "       shcmp --SHELL <shell> <arguments>"
-                  printf %s\\n "Run different shells with <arguments> and cluster them by output."
-                  printf %s\\n "--NOERR: capture and cluster by stdout only, else (default) stdout+stderr."
-                  printf %s\\n "--NOTRIM: don't trim trailing newlines from the outputs display."
-                  printf %s\\n "--TIME:   measure durations. expects time.sh at \$PATH, or \$SHCMP_TIME_FILE"
-                  printf %s\\n "          See https://github.com/avih/time.sh ."
-                  printf %s\\n "--SHELL: simply run a shell by its shcmp name [with the remaining arguments]."
+                  printf %s\\n "Usage: ${0##*/} -h|--help | [--NOERR] [--NOTRIM] [--TIME] arg..."
+                  printf %s\\n "       ${0##*/} --SHELL shell [arg...]"
+                  printf \\n
+                  printf %s\\n "Run different shells with arg... and cluster them by output."
+                  printf %s\\n "Note: any unrecognized option, e.g. -c, is considered the begining of arg."
+                  printf \\n
+                  printf %s\\n "--NOERR  Capture and cluster by stdout only, else (default) stdout+stderr."
+                  printf %s\\n "--NOTRIM Don't trim trailing newlines from the outputs display."
+                  printf %s\\n "--TIME   Measure durations - expects \$SHCMP_TIME_FILE or time.sh at \$PATH ."
+                  printf %s\\n "         See https://github.com/avih/time.sh ."
+                  printf %s\\n "--SHELL  Run ${0##*/}-name \`shell' [arg...] without processing or redirections."
+                  printf \\n
+                  printf %s\\n "Home: https://github.com/avih/shcmp"
                   exit 0
                   ;;
         --)       ALLOW_EMPTY=1; shift; break;
@@ -158,7 +163,7 @@ while true; do
 done
 
 [ $# -gt 0 ] || [ "$ALLOW_EMPTY" ] ||
-    { >&2 echo "Error: no arguments. Add -- to force. See usage with -h"; exit 1; }
+    { >&2 printf %s\\n "${0##*/}: missing arg. Add \`--' to force. See usage with -h"; exit 1; }
 
 pairs=$(cluster_outputs '' "<error> " "$shells" "$REDIRECT" "$@")
 eval fmt_out $TRIM "$pairs"
