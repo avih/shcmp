@@ -46,7 +46,7 @@ SHQ() {
 }
 
 # ~/.shcmprc can override these functions, which are called at the same context
-shcmp_time_init() { . "${SHCMP_TIME_FILE-time.sh}"; TIME_PRINT=0; }
+shcmp_time_init() { TIME_PRINT=${TIME_PRINT-0}; . "${SHCMP_TIME_FILE-time.sh}"; }
 shcmp_time_switch_to() { time_switch_to "$1"; }
 shcmp_time_finish() { time_finish; }
 
