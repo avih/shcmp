@@ -118,7 +118,8 @@ RC=~/.shcmprc  # no tilde expansion in hush at this time, so try also $HOME
     yash_posix()   { yash -o posixlycorrect "$@"; }
     foo_shell()    { /path/to/whatever "$@"; }
 
-    shells="sh bash bash_posix busybox_ash busybox_hush dash mksh mksh_posix posh yash yash_posix"
+    shells="sh bash bash_posix busybox_ash busybox_hush dash mksh mksh_posix
+            ksh ksh93 pdksh mrsh loksh oksh bosh pbosh posh yash yash_posix"
 
     working_shells=  # keep only the shells that exist/work on this system
     for s in $shells; do
