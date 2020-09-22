@@ -146,6 +146,7 @@ while true; do
                   printf %s\\n "       ${0##*/} --SHELL shell [arg...]"
                   printf \\n
                   printf %s\\n "Run different shells with arg... and cluster them by output."
+                  printf %s\\n "Succeeds only when all shells behave the same (one cluster)."
                   printf %s\\n "Note: any unrecognized option, e.g. -c, is considered the begining of arg."
                   printf \\n
                   printf %s\\n "--NOERR  Capture and cluster by stdout only, else (default) stdout+stderr."
@@ -164,7 +165,8 @@ while true; do
 done
 
 [ $# -gt 0 ] || [ "$ALLOW_EMPTY" ] ||
-    { >&2 printf %s\\n "${0##*/}: missing arg. Add \`--' to force. See usage with -h"; exit 1; }
+    { >&2 printf %s\\n "${0##*/}: missing arg. Add \`--' to force. See usage with -h"; exit 2; }
 
-pairs=$(cluster_outputs '' "<error> " "$shells" "$REDIRECT" "$@")
-eval fmt_out $TRIM "$pairs"
+eval "set -- $(cluster_outputs '' "<error> " "$shells" "$REDIRECT" "$@")"
+fmt_out "$TRIM" "$@"
+[ "$#" = 2 ] || exit 1
