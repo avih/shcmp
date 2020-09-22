@@ -2,44 +2,48 @@
 Compare outputs using different shells
 
 ```
-Usage: shcmp -h|--help | [--NOERR] [--NOTRIM] [--TIME] arg...
+Usage: shcmp -h|--help | [--NOERR] [--TIME] arg...
        shcmp --SHELL shell [arg...]
 
-Run different shells with arg... and cluster them by output.
+Run different shells with arg... and cluster by output + exit-code.
+Succeeds only when all shells behave the same (one cluster).
 Note: any unrecognized option, e.g. -c, is considered the begining of arg.
 
---NOERR  Capture and cluster by stdout only, else (default) stdout+stderr.
---NOTRIM Don't trim trailing newlines from the outputs display.
---TIME   Measure durations - expects $SHCMP_TIME_FILE or time.sh at $PATH .
-         See https://github.com/avih/time.sh .
---SHELL  Run shcmp-name `shell' [arg...] without processing or redirections.
+  --NOERR  Capture and cluster by stdout only, else (default) stdout+stderr.
+  --TIME   Measure durations - expects $SHCMP_TIME_FILE or time.sh at $PATH .
+           See https://github.com/avih/time.sh .
+  --SHELL  Run shcmp-name `shell' [arg...] without processing or redirections.
+
+Home: https://github.com/avih/shcmp
 ```
 
 ## Example:
 Not all shells support the non standard `local` command, and some need to quote
 assignments in `local`. This shows how different shells behave in this regard:
 
-```
-shcmp -c 'f() { local x=$(echo A B); echo "|$x|"; }; f'
+```sh
+shcmp -c 'f() { local x=$(echo A B) && echo "|$x|"; }; f'
 ```
 
 The above might produce the following output, depending on shells availability
 and versions:
 
 ```
-= sh, dash, posh:
+= sh, dash_058, posh:
 |A|
+(exit:0)
 
-= bash, bash_posix, busybox_ash, mksh, mksh_posix:
+= bash, bash_posix, busybox_ash, dash_0511, mksh, mksh_posix:
 |A B|
+(exit:0)
 
-= yash, yash_posix:
-yash: no such command `local'
-||
+= ksh93:
+ksh93: local: not found [No such file or directory]
+(exit:127)
 ```
 
 Note that the captured output also includes stderr (the error message for
-`yash`). Use `--NOERR` to prevent that and capture only stdout.
+`ksh93`). Use `--NOERR` to prevent that and capture only stdout.
 
 `shcmp` can also be used to compare the output of a script. E.g. use
 `shcmp ./myscript foo bar` to run `./myscript` with two arguments in all shells

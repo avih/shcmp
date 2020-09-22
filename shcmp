@@ -50,14 +50,14 @@ shcmp_time_init() { TIME_PRINT=${TIME_PRINT-0}; . "${SHCMP_TIME_FILE-time.sh}"; 
 shcmp_time_switch_to() { time_switch_to "$1"; }
 shcmp_time_finish() { time_finish; }
 
-# $1: out ok prefix, $2: out err prefix, $3: cmds, $4: trail [,$5..: args]
-# Run each of $3 (IFS-separated) with the args (quoted) and trail (unquoted),
-# and cluster them by (std) output, including the ok/err output prefix.
+# $1: IFS-separated COMMANDS, $2: TRAIL [,$3..: ARG...]
+# Run each of COMMANDS with ARG... (quoted) and TRAIL (unquoted),
+# and cluster them by (std) output + exit code.
 # Once done, prints (shell) quoted pairs of args: [<cmds1> <out1> [..]]
-# Note: $3 can be functions, commands, etc.
+# Note: COMMANDS can be functions, commands, etc.
 # Note: might touch some variables if not used in a subshell
 cluster_outputs() {
-    OK=$1 ERR=$2 CMDS=$3 TRAIL=$4; shift 4
+    CMDS=$1 TRAIL=$2; shift 2
     ARGS=$(SHQ "$@"); set --
     [ -z "$DOTIME" ] || shcmp_time_init $CMDS
 
@@ -91,10 +91,8 @@ list_items() {
 # args: 1/0 to trim/not-trim output, then arg pairs of: cmd-list common-output
 # Note: might touch some variables if not used in a subshell
 fmt_out() {
-    trim=$1; shift
     while [ $# -gt 0 ]; do
-        [ "$trim" = 0 ] && out=$2 || out=$(printf %s "$2")
-        printf "= %s:\n%s\n" "$(list_items $1)" "$out"
+        printf "= %s:\n%s\n" "$(list_items $1)" "$2"
         shift 2
         [ $# = 0 ] || echo
     done
@@ -129,30 +127,27 @@ RC=~/.shcmprc  # no tilde expansion in hush at this time, so try also $HOME
     shells=$working_shells
 }
 
-REDIRECT='2>&1' TRIM=1 ALLOW_EMPTY= DOTIME=
+REDIRECT='2>&1' ALLOW_EMPTY= DOTIME=
 while true; do
     case ${1-} in
         --SHELL)  shift; ("$@"); exit
                   ;;
         --NOERR)  REDIRECT=; shift
                   ;;
-        --NOTRIM) TRIM=0; shift
-                  ;;
         --TIME)   DOTIME=1; shift
                   ;;
         --help|-h)
-                  printf %s\\n "Usage: ${0##*/} -h|--help | [--NOERR] [--NOTRIM] [--TIME] arg..."
+                  printf %s\\n "Usage: ${0##*/} -h|--help | [--NOERR] [--TIME] arg..."
                   printf %s\\n "       ${0##*/} --SHELL shell [arg...]"
                   printf \\n
-                  printf %s\\n "Run different shells with arg... and cluster them by output."
+                  printf %s\\n "Run different shells with arg... and cluster by output + exit-code."
                   printf %s\\n "Succeeds only when all shells behave the same (one cluster)."
                   printf %s\\n "Note: any unrecognized option, e.g. -c, is considered the begining of arg."
                   printf \\n
-                  printf %s\\n "--NOERR  Capture and cluster by stdout only, else (default) stdout+stderr."
-                  printf %s\\n "--NOTRIM Don't trim trailing newlines from the outputs display."
-                  printf %s\\n "--TIME   Measure durations - expects \$SHCMP_TIME_FILE or time.sh at \$PATH ."
-                  printf %s\\n "         See https://github.com/avih/time.sh ."
-                  printf %s\\n "--SHELL  Run ${0##*/}-name \`shell' [arg...] without processing or redirections."
+                  printf %s\\n "  --NOERR  Capture and cluster by stdout only, else (default) stdout+stderr."
+                  printf %s\\n "  --TIME   Measure durations - expects \$SHCMP_TIME_FILE or time.sh at \$PATH ."
+                  printf %s\\n "           See https://github.com/avih/time.sh ."
+                  printf %s\\n "  --SHELL  Run ${0##*/}-name \`shell' [arg...] without processing or redirections."
                   printf \\n
                   printf %s\\n "Home: https://github.com/avih/shcmp"
                   exit 0
@@ -166,6 +161,6 @@ done
 [ $# -gt 0 ] || [ "$ALLOW_EMPTY" ] ||
     { >&2 printf %s\\n "${0##*/}: missing arg. Add \`--' to force. See usage with -h"; exit 2; }
 
-eval "set -- $(cluster_outputs '' "<error> " "$shells" "$REDIRECT" "$@")"
-fmt_out "$TRIM" "$@"
+eval "set -- $(cluster_outputs "$shells" "$REDIRECT" "$@")"
+fmt_out "$@"
 [ "$#" = 2 ] || exit 1
