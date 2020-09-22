@@ -64,8 +64,7 @@ cluster_outputs() {
     for C in $CMDS; do
         [ -z "$DOTIME" ] || shcmp_time_switch_to "$C"
 
-        OUT=$( (eval "$C $ARGS $TRAIL") && echo 0 || echo 1)  # trailing \n's
-        case $OUT in *0) OUT=$OK${OUT%?};; *) OUT=$ERR${OUT%?};; esac
+        OUT=$( (eval "$C $ARGS $TRAIL") && echo "(exit:0)" || echo "(exit:$?)")
 
         # add "$C" to an existing pair (in "$@") or add a new pair "$C" "$OUT"
         I=1; PA=; FOUND=
